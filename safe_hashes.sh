@@ -8,6 +8,7 @@
 # @author pcaversaccio
 
 # Set the terminal formatting constants.
+readonly YELLOW="\e[33m"
 readonly GREEN="\e[32m"
 readonly RED="\e[31m"
 readonly UNDERLINE="\e[4m"
@@ -26,7 +27,7 @@ fi
 
 # Utility function to ensure all required tools are installed.
 check_required_tools() {
-    local tools=("curl" "jq" "chisel" "cast")
+    local tools=("curl" "jq" "chisel" "cast" "xxd")
     local missing_tools=()
 
     for tool in "${tools[@]}"; do
@@ -77,68 +78,8 @@ readonly SAFE_TX_TYPEHASH_OLD="0x14d461bc7412367e924637b363c7bf29b8f47e2f84869f4
 # See: https://github.com/safe-global/safe-smart-account/blob/febab5e4e859e6e65914f17efddee415e4992961/contracts/libraries/SignMessageLib.sol#L12-L13.
 readonly SAFE_MSG_TYPEHASH="0x60b3cbf8b4a223d68d641b3b6ddf9a298e7f33710cf3d3a9d1146b5a6150fbca"
 
-# Set the trusted (i.e. for delegate calls) `MultiSend` addresses:
-# MultiSend `v1.1.1` (canonical): https://github.com/safe-global/safe-deployments/blob/4e25b09f62a4acec92b4ebe6b8ae496b3852d440/src/assets/v1.1.1/multi_send.json#L7,
-# MultiSend `v1.3.0` (canonical): https://github.com/safe-global/safe-deployments/blob/4e25b09f62a4acec92b4ebe6b8ae496b3852d440/src/assets/v1.3.0/multi_send.json#L7,
-# MultiSend `v1.3.0` (eip155): https://github.com/safe-global/safe-deployments/blob/4e25b09f62a4acec92b4ebe6b8ae496b3852d440/src/assets/v1.3.0/multi_send.json#L11,
-# MultiSend `v1.3.0` (zksync): https://github.com/safe-global/safe-deployments/blob/4e25b09f62a4acec92b4ebe6b8ae496b3852d440/src/assets/v1.3.0/multi_send.json#L15,
-# Multisend `v1.4.1` (canonical): https://github.com/safe-global/safe-deployments/blob/4e25b09f62a4acec92b4ebe6b8ae496b3852d440/src/assets/v1.4.1/multi_send.json#L7.
-declare -a -r MultiSend=(
-    "0x8D29bE29923b68abfDD21e541b9374737B49cdAD" # MultiSend `v1.1.1` (canonical).
-    "0xA238CBeb142c10Ef7Ad8442C6D1f9E89e07e7761" # MultiSend `v1.3.0` (canonical).
-    "0x998739BFdAAdde7C933B942a68053933098f9EDa" # MultiSend `v1.3.0` (eip155).
-    "0x0dFcccB95225ffB03c6FBB2559B530C2B7C8A912" # MultiSend `v1.3.0` (zksync).
-    "0x38869bf66a61cF6bDB996A6aE40D5853Fd43B526" # MultiSend `v1.4.1` (canonical).
-)
-
-# Set the trusted (i.e. for delegate calls) `MultiSendCallOnly` addresses:
-# MultiSendCallOnly `v1.3.0` (canonical): https://github.com/safe-global/safe-deployments/blob/4e25b09f62a4acec92b4ebe6b8ae496b3852d440/src/assets/v1.3.0/multi_send_call_only.json#L7,
-# MultiSendCallOnly `v1.3.0` (eip155): https://github.com/safe-global/safe-deployments/blob/4e25b09f62a4acec92b4ebe6b8ae496b3852d440/src/assets/v1.3.0/multi_send_call_only.json#L11,
-# MultiSendCallOnly `v1.3.0` (zksync): https://github.com/safe-global/safe-deployments/blob/4e25b09f62a4acec92b4ebe6b8ae496b3852d440/src/assets/v1.3.0/multi_send_call_only.json#L15,
-# MultiSendCallOnly `v1.4.1` (canonical): https://github.com/safe-global/safe-deployments/blob/4e25b09f62a4acec92b4ebe6b8ae496b3852d440/src/assets/v1.4.1/multi_send_call_only.json#L7.
-declare -a -r MultiSendCallOnly=(
-    "0x40A2aCCbd92BCA938b02010E17A5b8929b49130D" # MultiSendCallOnly `v1.3.0` (canonical).
-    "0xA1dabEF33b3B82c7814B6D82A79e50F4AC44102B" # MultiSendCallOnly `v1.3.0` (eip155).
-    "0xf220D3b4DFb23C4ade8C88E526C1353AbAcbC38F" # MultiSendCallOnly `v1.3.0` (zksync).
-    "0x9641d764fc13c8B624c04430C7356C1C7C8102e2" # MultiSendCallOnly `v1.4.1` (canonical).
-)
-
-# Set the trusted (i.e. for delegate calls) `SafeMigration` addresses:
-# SafeMigration `v1.4.1` (canonical): https://github.com/safe-global/safe-deployments/blob/4e25b09f62a4acec92b4ebe6b8ae496b3852d440/src/assets/v1.4.1/safe_migration.json#L7.
-declare -a -r SafeMigration=(
-    "0x526643F69b81B008F46d95CD5ced5eC0edFFDaC6" # SafeMigration `v1.4.1` (canonical).
-)
-
-# Set the trusted (i.e. for delegate calls) `SafeToL2Migration` addresses:
-# SafeToL2Migration `v1.4.1` (canonical): https://github.com/safe-global/safe-deployments/blob/4e25b09f62a4acec92b4ebe6b8ae496b3852d440/src/assets/v1.4.1/safe_to_l2_migration.json#L7.
-declare -a -r SafeToL2Migration=(
-    "0xfF83F6335d8930cBad1c0D439A841f01888D9f69" # SafeToL2Migration `v1.4.1` (canonical).
-)
-
-# Set the trusted (i.e. for delegate calls) `SignMessageLib` addresses:
-# SignMessageLib `v1.3.0` (canonical): https://github.com/safe-global/safe-deployments/blob/4e25b09f62a4acec92b4ebe6b8ae496b3852d440/src/assets/v1.3.0/sign_message_lib.json#L7,
-# SignMessageLib `v1.3.0` (eip155): https://github.com/safe-global/safe-deployments/blob/4e25b09f62a4acec92b4ebe6b8ae496b3852d440/src/assets/v1.3.0/sign_message_lib.json#L11,
-# SignMessageLib `v1.3.0` (zksync): https://github.com/safe-global/safe-deployments/blob/4e25b09f62a4acec92b4ebe6b8ae496b3852d440/src/assets/v1.3.0/sign_message_lib.json#L15,
-# SignMessageLib `v1.4.1` (canonical): https://github.com/safe-global/safe-deployments/blob/4e25b09f62a4acec92b4ebe6b8ae496b3852d440/src/assets/v1.4.1/sign_message_lib.json#L7.
-declare -a -r SignMessageLib=(
-    "0xA65387F16B013cf2Af4605Ad8aA5ec25a2cbA3a2" # SignMessageLib `v1.3.0` (canonical).
-    "0x98FFBBF51bb33A056B08ddf711f289936AafF717" # SignMessageLib `v1.3.0` (eip155).
-    "0x357147caf9C0cCa67DfA0CF5369318d8193c8407" # SignMessageLib `v1.3.0` (zksync).
-    "0xd53cd0aB83D845Ac265BE939c57F53AD838012c9" # SignMessageLib `v1.4.1` (canonical).
-)
-
-# Set the trusted (i.e. for delegate calls) contract addresses.
-# See: https://github.com/safe-global/safe-transaction-service/blob/c3b42f0bebff74b99fcdd958aee54b149e27eca5/safe_transaction_service/contracts/management/commands/setup_safe_contracts.py#L10-L16.
-declare -A -r TRUSTED_FOR_DELEGATE_CALL=(
-    ["MultiSend"]="${MultiSend[@]}"
-    ["MultiSendCallOnly"]="${MultiSendCallOnly[@]}"
-    ["SafeMigration"]="${SafeMigration[@]}"
-    ["SafeToL2Migration"]="${SafeToL2Migration[@]}"
-    ["SignMessageLib"]="${SignMessageLib[@]}"
-)
-
 # Define the supported networks from the Safe transaction service.
-# See https://docs.safe.global/advanced/smart-account-supported-networks?service=Transaction+Service.
+# See https://docs.safe.global/core-api/transaction-service-supported-networks.
 declare -A -r API_URLS=(
     ["arbitrum"]="https://safe-transaction-arbitrum.safe.global"
     ["aurora"]="https://safe-transaction-aurora.safe.global"
@@ -162,6 +103,8 @@ declare -A -r API_URLS=(
     ["xlayer"]="https://safe-transaction-xlayer.safe.global"
     ["zksync"]="https://safe-transaction-zksync.safe.global"
 )
+readonly SAFE_CLIENT_API_URL="https://safe-client.safe.global/v1/chains"
+readonly DEFAULT_OFFLINE_SAFE_VERSION="1.3.0"
 
 # Define the chain IDs of the supported networks from the Safe transaction service.
 declare -A -r CHAIN_IDS=(
@@ -188,30 +131,60 @@ declare -A -r CHAIN_IDS=(
     ["zksync"]="324"
 )
 
+version() {
+    echo "safe_hashes 0.1.4"
+    exit 0
+}
+
 # Utility function to display the usage information.
 usage() {
     cat <<EOF
 Usage: $0 [--help] [--list-networks]
-       --network <network> --address <address> --nonce <nonce>
-       --message <file>
+       --network <network> --address <address> --nonce <nonce> [--untrusted]
+       --message <file> --print-mst-calldata --safe-version <version>
+       $0 --offline --network <network> --address <address> --nonce <nonce> [OPTIONS]
 
 Options:
-  --help              Display this help message
-  --list-networks     List all supported networks and their chain IDs
-  --network <network> Specify the network (required)
-  --address <address> Specify the Safe multisig address (required)
-  --nonce <nonce>     Specify the transaction nonce (required for transaction hashes)
-  --message <file>    Specify the message file (required for off-chain message hashes)
+  --version             Display the script version
+  --help                Display this help message
+  --list-networks       List all supported networks and their chain IDs
+  --network <network>   Specify the network (required)
+  --address <address>   Specify the Safe multisig address (required)
+  --nonce <nonce>       Specify the transaction nonce (required for transaction hashes)
+  --message <file>      Specify the message file (required for off-chain message hashes)
+  --untrusted           Use untrusted endpoint (adds trusted=false parameter to API calls)
+  --offline             Calculate transaction hash offline with custom parameters
+  --print-mst-calldata  Print the calldata for the entire multi-sig transaction       
+  --safe-version        Safe version (default: 1.3.0)
 
-Example for transaction hashes:
+Additional options for offline mode:
+  --to                  Target address (required in offline mode)
+  --value               Transaction value in wei (default: 0)
+  --data                Transaction data (default: 0x)
+  --operation           Operation type (default: 0)
+  --safe-tx-gas         SafeTxGas (default: 0)
+  --base-gas            BaseGas (default: 0)
+  --gas-price           GasPrice (default: 0)
+  --gas-token           Gas token address (default: 0x0000...0000)
+  --refund-receiver     Refund receiver address (default: 0x0000...0000)
+
+Examples:
+  # Online transaction hash calculation (trusted by default):
   $0 --network ethereum --address 0x1234...5678 --nonce 42
 
-Example for off-chain message hashes:
-  $0 --network ethereum --address 0x1234...5678 --message message.txt
-EOF
-    exit "${1:-1}"
-}
+  # Online transaction hash calculation with untrusted endpoint:
+  $0 --network ethereum --address 0x1234...5678 --nonce 42 --untrusted
 
+  # Off-chain message hash calculation:
+  $0 --network ethereum --address 0x1234...5678 --message message.txt
+
+  # Offline transaction hash calculation:
+  $0 --offline --network ethereum --address 0x1234...5678 --to 0x9876...5432 \\
+     --data 0x095e...0001 --value 1000000000000000000 --nonce 42
+
+EOF
+    exit 1
+}
 # Utility function to list all supported networks.
 list_networks() {
     echo "Supported Networks:"
@@ -269,6 +242,44 @@ print_transaction_data() {
     print_field "Encoded message" "$message"
 }
 
+print_mst_calldata_data() {
+    local to=$1
+    local value=$2
+    local data=$3
+    local operation=$4
+    local safe_tx_gas=$5
+    local base_gas=$6
+    local gas_price=$7
+    local gas_token=$8
+    local refund_receiver=$9
+    local signatures=${10}
+    local confirmations_required=${11}
+    local confirmations_count=${12}
+
+    print_header "Multi-sig Transaction Calldata Data"
+    print_field "Confirmations count: " "$confirmations_count" 
+    print_field "Required number: " "$confirmations_required"
+
+    if [[ "$confirmations_count" -lt "$confirmations_required" ]]; then
+        echo "Not enough confirmations to print calldata"
+    else 
+        local full_calldata=$(cast calldata "execTransaction(address,uint256,bytes,uint8,uint256,uint256,uint256,address,address,bytes)" \
+            "$to" \
+            "$value" \
+            "$data" \
+            "$operation" \
+            "$safe_tx_gas" \
+            "$base_gas" \
+            "$gas_price" \
+            "$gas_token" \
+            "$refund_receiver" \
+            "$signatures")
+        print_field "Full transaction calldata" "$full_calldata"
+        local tx_data_hashed=$(cast keccak "$data")
+        print_field "Transaction calldata hash" "$tx_data_hashed"
+    fi
+}
+
 # Utility function to format the hash (keep `0x` lowercase, rest uppercase).
 format_hash() {
     local hash=$1
@@ -282,6 +293,13 @@ print_hash_info() {
     local domain_hash=$1
     local message_hash=$2
     local safe_tx_hash=$3
+    local binary_literal=$(
+        echo -n "${safe_tx_hash#0x}" | xxd -r -p | \
+        perl -pe 's/([^[:print:]]|[\x80-\xff])/sprintf("\\x%02x",ord($1))/ge; s/([^ -~])/sprintf("\\x%02x",ord($1))/ge'
+    )
+
+    print_header "Legacy Ledger Format"
+    print_field "Binary string literal" "$binary_literal"
 
     print_header "Hashes"
     print_field "Domain hash" "$(format_hash "$domain_hash")"
@@ -291,15 +309,11 @@ print_hash_info() {
 
 # Utility function to print the ABI-decoded transaction data.
 print_decoded_data() {
-    local data=$1
-    local data_decoded=$2
+    local data_decoded=$1
 
-    if [[ "$data" == "0x" && "$data_decoded" == "0x" ]]; then
+    if [[ "$data_decoded" == "0x" ]]; then
         print_field "Method" "0x (ETH Transfer)"
         print_field "Parameters" "[]"
-    elif [[ "$data" != "0x" && "$data_decoded" == "0x" ]]; then
-        print_field "Method" "Unknown"
-        print_field "Parameters" "Unknown"
     else
         local method=$(echo "$data_decoded" | jq -r ".method")
         local parameters=$(echo "$data_decoded" | jq -r ".parameters")
@@ -340,7 +354,7 @@ get_version() {
 validate_version() {
     local version=$1
     if [[ -z "$version" ]]; then
-        echo "$(tput setaf 3)No Safe multisig contract found for the specified network. Please ensure that you have selected the correct network.$(tput sgr0)"
+        echo "$(tput setaf 3)No Safe multisig contract found for the specified network. Please ensure that you have selected the correct network.$(tput setaf 0)"
         exit 0
     fi
 
@@ -348,7 +362,7 @@ validate_version() {
 
     # Ensure that the Safe multisig version is `>= 0.1.0`.
     if [[ "$(printf "%s\n%s" "$clean_version" "0.1.0" | sort -V | head -n1)" == "$clean_version" && "$clean_version" != "0.1.0" ]]; then
-        echo "$(tput setaf 3)Safe multisig version \"${clean_version}\" is not supported!$(tput sgr0)"
+        echo "$(tput setaf 3)Safe multisig version \"${clean_version}\" is not supported!$(tput setaf 0)"
         exit 0
     fi
 }
@@ -441,27 +455,63 @@ calculate_hashes() {
 
     # Print the retrieved transaction data.
     print_transaction_data "$address" "$to" "$value" "$data" "$message"
+
     # Print the ABI-decoded transaction data.
-    print_decoded_data "$data" "$data_decoded"
+    if [[ "$data_decoded" == "{}" ]]; then
+        echo "Skipping decoded data, since raw data was passed"
+    else
+        print_decoded_data "$data_decoded"
+    fi
     # Print the results with the same formatting for "Domain hash" and "Message hash" as a Ledger hardware device.
     print_hash_info "$domain_hash" "$message_hash" "$safe_tx_hash"
 }
+
 
 # Utility function to validate the network name.
 validate_network() {
     local network="$1"
     if [[ -z "${API_URLS[$network]:-}" || -z "${CHAIN_IDS[$network]:-}" ]]; then
         echo -e "${BOLD}${RED}Invalid network name: \"${network}\"${RESET}\n" >&2
-        calculate_safe_tx_hashes --list-networks >&2
+        calculate_safe_hashes --list-networks >&2
         exit 1
     fi
 }
 
 # Utility function to retrieve the API URL of the selected network.
-get_api_url() {
+get_api_url_and_response() {
     local network="$1"
+    local address="$2"
+    local api_url
+    
     validate_network "$network"
-    echo "${API_URLS[$network]}"
+    #api_url="${API_URLS[$network]}"
+    api_url="https://safe-client.safe.global/v1/chains"
+
+    # Fetch the safe info and handle potential errors
+    local safe_info_response
+    local response_body
+    local status_code
+        
+    local endpoint="${api_url}/${chain_id}/safes/${address}/multisig-transactions/raw?nonce=${nonce}"
+
+    safe_info_response=$(curl -s -w "\n%{http_code}" "${api_url}/api/v1/safes/${address}/")
+    response_body=$(echo "$safe_info_response" | sed '$d')
+    status_code=$(echo "$safe_info_response" | tail -n1)
+    
+    # If 404, try alternative API
+    if [[ "$status_code" == "404" ]]; then
+        echo -e "${YELLOW}Warning: 404 returned from Safe Transaction API. We will attempt to use the client API instead.${RESET}" >&2
+        api_url="$SAFE_CLIENT_API_URL"
+    fi
+    
+    # Check for empty response
+    if [[ -z "$response_body" ]]; then
+        echo -e "${RED}Error: Empty response from Safe API${RESET}" >&2
+        exit 1
+    fi
+    
+    echo "$api_url"
+    echo "$response_body"
 }
 
 # Utility function to retrieve the chain ID of the selected network.
@@ -486,24 +536,6 @@ validate_nonce() {
     if [[ -z "$nonce" || ! "$nonce" =~ ^[0-9]+$ ]]; then
         echo -e "${BOLD}${RED}Invalid nonce value: \"${nonce}\". Must be a non-negative integer!${RESET}" >&2
         exit 1
-    fi
-}
-
-# Utility function to warn the user if the transaction includes an untrusted delegate call.
-warn_if_delegate_call() {
-    local operation="$1"
-    local to="$2"
-
-    # Warn the user if `operation` equals `1`, implying a `delegatecall`, and if the `to` address is untrusted.
-    # See: https://github.com/safe-global/safe-smart-account/blob/34359e8305d618b7d74e39ed370a6b59ab14f827/contracts/libraries/Enum.sol.
-    if [[ "$operation" -eq 1 && ! " ${TRUSTED_FOR_DELEGATE_CALL[@]} " =~ " ${to} " ]]; then
-        echo
-        cat <<EOF
-$(tput setaf 1)WARNING: The transaction includes an untrusted delegate call to address $to!
-This may lead to unexpected behaviour or vulnerabilities.
-Please review it carefully before you sign!$(tput sgr0)
-
-EOF
     fi
 }
 
@@ -590,34 +622,75 @@ calculate_safe_hashes() {
         usage
     fi
 
-    local network="" address="" nonce="" message_file=""
+    local network="" address="" nonce="" message_file="" offline=false version="" untrusted=false
+    local offline_to="" offline_value="0" offline_data="0x" offline_operation="0"
+    local offline_safe_tx_gas="0" offline_base_gas="0" offline_gas_price="0"
+    local offline_gas_token="0x0000000000000000000000000000000000000000"
+    local offline_refund_receiver="0x0000000000000000000000000000000000000000"
+    local print_mst_calldata=false
 
-    # Parse the command line arguments.
+    # Parse command line arguments
     while [[ $# -gt 0 ]]; do
         case "$1" in
-            --help) usage 0 ;;
+            -v|--version) version ;;
+            --help) usage ;;
+            --offline) offline=true; shift ;;
+            --print-mst-calldata) print_mst_calldata=true; shift ;;
+            --untrusted) untrusted=true; shift ;;
             --network) network="$2"; shift 2 ;;
             --address) address="$2"; shift 2 ;;
             --nonce) nonce="$2"; shift 2 ;;
             --message) message_file="$2"; shift 2 ;;
+            --to) offline_to="$2"; shift 2 ;;
+            --value) offline_value="$2"; shift 2 ;;
+            --data) offline_data="$2"; shift 2 ;;
+            --operation) offline_operation="$2"; shift 2 ;;
+            --safe-tx-gas) offline_safe_tx_gas="$2"; shift 2 ;;
+            --base-gas) offline_base_gas="$2"; shift 2 ;;
+            --gas-price) offline_gas_price="$2"; shift 2 ;;
+            --gas-token) offline_gas_token="$2"; shift 2 ;;
+            --refund-receiver) offline_refund_receiver="$2"; shift 2 ;;
+            --safe-version) version="$2"; shift 2 ;;
             --list-networks) list_networks ;;
             *) echo "Unknown option: $1" >&2; usage ;;
         esac
     done
 
+    # Validation
+    if [[ "$offline" == true && "$print_mst_calldata" == true ]]; then
+        echo -e "${RED}Error: The --print-mst-calldata option is not supported in offline mode. Please remove it and try again.${RESET}" >&2
+        exit 1
+    fi
+
     # Validate if the required parameters have the correct format.
     validate_network "$network"
     validate_address "$address"
-
-    # Get the API URL and chain ID for the specified network.
-    local api_url=$(get_api_url "$network")
     local chain_id=$(get_chain_id "$network")
-    local endpoint="${api_url}/api/v1/safes/${address}/multisig-transactions/?nonce=${nonce}"
+    local api_url=""
 
-    # Get the Safe multisig version.
-    local version=$(curl -sf "${api_url}/api/v1/safes/${address}/" | jq -r ".version // \"0.0.0\"")
+    # Only get api_url and version in online mode or for message files
+    if [[ "$offline" != "true" || -n "$message_file" ]]; then
+        # api_url=$(get_api_url_and_response "$network" "$address")
+        read api_url response_body < <(get_api_url_and_response "$network" "$address")
 
-    # Calculate the domain and message hashes for off-chain messages.
+        # Check if we're using the client API and need version from command line
+        if [[ "$api_url" == "$SAFE_CLIENT_API_URL" ]]; then
+            # Check if --safe-version was provided in command line
+            if [[ -z "$version" ]]; then
+                echo -e "${RED}Error: When using the client API, you must specify the Safe version. ie using --safe-version "1.3.0" ${RESET}" >&2
+                exit 1
+            fi
+        else
+            # Check if version is already set
+            if [[ -n "$version" ]]; then
+                echo -e "${YELLOW}Warning: Overriding previously set version with value from API response${RESET}" >&2
+            fi
+            # Extract version from the API response
+            version=$(echo "$response_body" | jq -r ".version // \"0.0.0\"")
+        fi
+    fi
+
+    # Handle message file mode first
     if [[ -n "$message_file" ]]; then
         if [[ -n "$nonce" ]]; then
             echo -e "${RED}Error: When calculating off-chain message hashes, do not specify a nonce.${RESET}" >&2
@@ -627,17 +700,61 @@ calculate_safe_hashes() {
         exit 0
     fi
 
+    if [[ "$offline" == true ]]; then
+        handle_offline_mode "$network" "$chain_id" "$address" "$nonce" "$version" \
+            "$offline_to" "$offline_value" "$offline_data" "$offline_operation" \
+            "$offline_safe_tx_gas" "$offline_base_gas" "$offline_gas_price" \
+            "$offline_gas_token" "$offline_refund_receiver"
+    else
+        handle_online_mode "$network" "$chain_id" "$api_url" "$version" \
+            "$address" "$nonce" "$untrusted" "$print_mst_calldata"
+    fi
+}
+
+handle_online_mode() {
+    # Get the API URL and chain ID for the specified network.
+    local network="$1"
+    local chain_id="$2"
+    local api_url="$3"
+    local version="$4"
+    local address="$5"
+    local nonce="$6"
+    local untrusted="$7"
+    local print_mst_calldata="$8"
+
+    local endpoint
+
+    if [[ "$api_url" == "$SAFE_CLIENT_API_URL" ]]; then
+        # Use client API format
+        endpoint="${api_url}/${chain_id}/safes/${address}/multisig-transactions/raw?nonce=${nonce}"
+    else
+        # Use transaction API format
+        endpoint="${api_url}/api/v1/safes/${address}/multisig-transactions/?nonce=${nonce}"
+        
+        if [[ "$untrusted" == "true" ]]; then
+            endpoint="${endpoint}&trusted=false"
+        fi
+    fi
+
+    if [[ "$untrusted" == "true" ]]; then
+        endpoint="${endpoint}&trusted=false"
+    fi
+
     # Validate if the nonce parameter has the correct format.
     validate_nonce "$nonce"
 
     # Fetch the transaction data from the API.
     local response=$(curl -sf "$endpoint")
+
+    # For debugging purposes:
+    # echo "Endpoint: $endpoint"
+
     local count=$(echo "$response" | jq -r ".count // \"0\"")
     local idx=0
 
     # Inform the user that no transactions are available for the specified nonce.
     if [[ $count -eq 0 ]]; then
-        echo "$(tput setaf 3)No transaction is available for this nonce!$(tput sgr0)"
+        echo "$(tput setaf 3)No transaction is available for this nonce!$(tput setaf 0)"
         exit 0
     # Notify the user about multiple transactions with identical nonce values and prompt for user input.
     elif [[ $count -gt 1 ]]; then
@@ -687,9 +804,18 @@ EOF
     local refund_receiver=$(echo "$response" | jq -r ".results[$idx].refundReceiver // \"0x0000000000000000000000000000000000000000\"")
     local nonce=$(echo "$response" | jq -r ".results[$idx].nonce // \"0\"")
     local data_decoded=$(echo "$response" | jq -r ".results[$idx].dataDecoded // \"0x\"")
+    local confirmations_required=$(echo "$response" | jq -r ".results[$idx].confirmationsRequired // \"0\"")
+    local confirmation_count=$(echo "$response" | jq -r ".results[$idx].confirmations | length // \"0\"")
 
-    # Warn the user if the transaction includes an untrusted delegate call.
-    warn_if_delegate_call "$operation" "$to"
+    # Extract signatures from confirmations array and concatenate them
+    local signatures=$(echo "$response" | jq -r '.results[0].confirmations | reverse | .[].signature' | sed '1!s/0x//' | tr -d '\n')
+
+    # If signatures is empty, use 0x
+    if [[ -z "$signatures" ]]; then
+        signatures="0x"
+    elif [[ ! "$signatures" =~ ^0x ]]; then
+        signatures="0x${signatures}"
+    fi
 
     # Calculate and display the hashes.
     echo "==================================="
@@ -713,7 +839,69 @@ EOF
         "$refund_receiver" \
         "$nonce" \
         "$data_decoded" \
-        "$version"
+        "$version" 
+
+    if [[ "$print_mst_calldata" == "true" ]]; then
+        print_mst_calldata_data "$to" "$value" "$data" "$operation" "$safe_tx_gas" "$base_gas" "$gas_price" "$gas_token" "$refund_receiver" "$signatures" "$confirmations_required" "$confirmation_count"
+    fi
+
 }
 
+handle_offline_mode() {
+    local network="$1"
+    local chain_id="$2"
+    local address="$3"
+    local nonce="$4"
+    local version="$5"
+    local offline_to="$6"
+    local offline_value="$7"
+    local offline_data="$8"
+    local offline_operation="$9"
+    local offline_safe_tx_gas="${10}"
+    local offline_base_gas="${11}"
+    local offline_gas_price="${12}"
+    local offline_gas_token="${13}"
+    local offline_refund_receiver="${14}"
+
+    if [[ -z "$version" ]]; then
+        version=$DEFAULT_OFFLINE_SAFE_VERSION
+        echo -e "${YELLOW}Warning: No version detected. Using default version ${version}${RESET}" >&2
+    fi
+
+    if [[ -z "$network" || -z "$address" || -z "$offline_to" || -z "$nonce" ]]; then
+        echo -e "${BOLD}${RED}Error: network, address, to, and nonce are required for offline mode${RESET}" >&2
+        usage
+    fi
+
+    # Validate addresses
+    validate_address "$offline_to"
+    [[ "$offline_gas_token" != "0x0000000000000000000000000000000000000000" ]] && validate_address "$offline_gas_token"
+    [[ "$offline_refund_receiver" != "0x0000000000000000000000000000000000000000" ]] && validate_address "$offline_refund_receiver"
+
+    # Calculate and display the hashes
+    echo "==================================="
+    echo "= Selected Network Configurations ="
+    echo -e "===================================\n"
+    print_field "Network" "$network"
+    print_field "Chain ID" "$chain_id" true
+    echo "========================================"
+    echo "= Transaction Data and Computed Hashes ="
+    echo "========================================"
+    calculate_hashes "$chain_id" \
+        "$address" \
+        "$offline_to" \
+        "$offline_value" \
+        "$offline_data" \
+        "$offline_operation" \
+        "$offline_safe_tx_gas" \
+        "$offline_base_gas" \
+        "$offline_gas_price" \
+        "$offline_gas_token" \
+        "$offline_refund_receiver" \
+        "$nonce" \
+        "{}" \
+        "$version" 
+}
+
+# Entry point for the script
 calculate_safe_hashes "$@"

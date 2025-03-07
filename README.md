@@ -279,3 +279,23 @@ Safe message hash: 0x1866b559f56261ada63528391b93a1fe8e2e33baf7cace94fc6b42202d1
   - Authors: [`josepchetrit12`](https://github.com/josepchetrit12), [`xaler5`](https://github.com/xaler5)
 
 [^1]: It is theoretically possible to query transactions prior to the first signature; however, this functionality is not incorporated into the main [script](https://github.com/pcaversaccio/safe-tx-hashes-util/blob/main/safe_hashes.sh). To do so, you would proceed through the [Safe UI](https://app.safe.global) as usual, stopping at the page where the transaction is signed or executed. At this point, the action is recorded in the [Safe Transaction Service API](https://docs.safe.global/core-api/transaction-service-overview), allowing you to retrieve the unsigned transaction by setting `trusted=false` in the [API](https://docs.safe.global/core-api/transaction-service-reference/mainnet#List-a-Safe's-Multisig-Transactions) query within your Bash script. For example, you might use a query such as: `https://safe-transaction-arbitrum.safe.global/api/v1/safes/0xB24A3AA250E209bC95A4a9afFDF10c6D099B3d34/multisig-transactions/?trusted=false&nonce=4`. This decision to not implement this feature avoids potential confusion caused by unsigned transactions in the queue, especially when multiple transactions share the same nonce, making it unclear which one to act upon. If this feature aligns with your needs, feel free to fork the [script](https://github.com/pcaversaccio/safe-tx-hashes-util/blob/main/safe_hashes.sh) and modify it as necessary.
+
+
+# ubuntu installation
+apt-get update
+apt-get install -y jq curl wget xxd bc
+# from https://github.com/foundry-rs/foundry/releases/tag/stable
+# amd64
+wget https://github.com/foundry-rs/foundry/releases/download/stable/foundry_stable_linux_amd64.tar.gz
+
+tar xvf foundry_stable_linux_amd64.tar.gz
+mv chisel /usr/local/bin/
+mv chisel /usr/local/bin/
+rm forge
+rm anvil
+rm foundry_stable_linux_amd64
+
+
+./safe_eth_hashes.sh base 0xF47Bfaae376a2D7a84c00DA900E66080830F308B 1 0x1006Dce136Ea998C456f6c6314781a2A2fA4a0a7 0.00000000000000001
+
+./safe_erc20_hashes.sh base 0xF47Bfaae376a2D7a84c00DA900E66080830F308B 3 usdc 0x1006Dce136Ea998C456f6c6314781a2A2fA4a0a7 0.01
