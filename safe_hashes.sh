@@ -61,6 +61,9 @@ if [[ "${DEBUG:-false}" == "true" ]]; then
     set -x
 fi
 
+# Set the zero address as global constant.
+readonly ZERO_ADDRESS="0x0000000000000000000000000000000000000000"
+
 # Set the type hash constants.
 # => `keccak256("EIP712Domain(uint256 chainId,address verifyingContract)");`
 # See: https://github.com/safe-global/safe-smart-account/blob/a0a1d4292006e26c4dbd52282f4c932e1ffca40f/contracts/Safe.sol#L54-L57.
@@ -232,13 +235,41 @@ print_transaction_data() {
     local to=$2
     local value=$3
     local data=$4
-    local message=$5
+    local operation=$5
+    local safe_tx_gas=$6
+    local base_gas=$7
+    local gas_price=$8
+    local gas_token=$9
+    local refund_receiver=${10}
+    local nonce=${11}
+    local message=${12}
 
     print_header "Transaction Data"
     print_field "Multisig address" "$address"
     print_field "To" "$to"
     print_field "Value" "$value"
     print_field "Data" "$data"
+    case "$operation" in
+        1) 
+            if [[ "$operation" -eq 1 && ! " ${TRUSTED_FOR_DELEGATE_CALL[@]} " =~ " ${to} " ]]; then
+                print_field "Operation" "Delegatecall $(tput setaf 1)(UNTRUSTED DELEGATECALL; PLEASE VERIFY!)$(tput sgr0)"
+            else
+                print_field "Operation" "Delegatecall $(tput setaf 3)(trusted delegatecall)$(tput sgr0)"
+            fi
+            ;;
+        0) 
+            print_field "Operation" "Call"
+            ;;
+        *) 
+            print_field "Operation" "Unknown"
+            ;;
+    esac
+    print_field "Safe Transaction Gas" "$safe_tx_gas"
+    print_field "Base Gas" "$base_gas"
+    print_field "Gas Price" "$gas_price"
+    print_field "Gas Token" "$gas_token"
+    print_field "Refund Receiver" "$refund_receiver"
+    print_field "Nonce" "$nonce"
     print_field "Encoded message" "$message"
 }
 
@@ -454,8 +485,7 @@ calculate_hashes() {
         awk '/Data:/ {gsub(/\x1b\[[0-9;]*m/, "", $3); print $3}')
 
     # Print the retrieved transaction data.
-    print_transaction_data "$address" "$to" "$value" "$data" "$message"
-
+    print_transaction_data "$address" "$to" "$value" "$data" "$operation" "$safe_tx_gas" "$base_gas" "$gas_price" "$gas_token" "$refund_receiver" "$nonce" "$message"
     # Print the ABI-decoded transaction data.
     if [[ "$data_decoded" == "{}" ]]; then
         echo "Skipping decoded data, since raw data was passed"
@@ -536,6 +566,47 @@ validate_nonce() {
     if [[ -z "$nonce" || ! "$nonce" =~ ^[0-9]+$ ]]; then
         echo -e "${BOLD}${RED}Invalid nonce value: \"${nonce}\". Must be a non-negative integer!${RESET}" >&2
         exit 1
+    fi
+}
+
+# Utility function to warn the user if the transaction includes an untrusted delegate call.
+warn_if_delegate_call() {
+    local operation="$1"
+    local to="$2"
+
+    # Warn the user if `operation` equals `1`, implying a `delegatecall`, and if the `to` address is untrusted.
+    # See: https://github.com/safe-global/safe-smart-account/blob/34359e8305d618b7d74e39ed370a6b59ab14f827/contracts/libraries/Enum.sol.
+    if [[ "$operation" -eq 1 && ! " ${TRUSTED_FOR_DELEGATE_CALL[@]} " =~ " ${to} " ]]; then
+        echo
+        cat <<EOF
+$(tput setaf 1)WARNING: The transaction includes an untrusted delegate call to address $to!
+This may lead to unexpected behaviour or vulnerabilities. Please review it carefully before you sign!$(tput sgr0)
+
+EOF
+    fi
+}
+
+# Utility function to check for a potential gas token attack.
+check_gas_token_attack() {
+    local gas_price=$1
+    local gas_token=$2
+    local refund_receiver=$3
+    local warning_message=""
+
+    if [[ "$gas_token" != "$ZERO_ADDRESS" && "$refund_receiver" != "$ZERO_ADDRESS" ]]; then
+        warning_message+="$(tput setaf 1)WARNING: This transaction uses a custom gas token and a custom refund receiver.
+This combination can be used to hide a rerouting of funds through gas refunds.$(tput sgr0)\n"
+        if [[ "$gas_price" != "0" ]]; then
+            warning_message+="$(tput setaf 1)Furthermore, the gas price is non-zero, which increases the potential for hidden value transfers.$(tput sgr0)\n"
+        fi
+    elif [[ "$gas_token" != "$ZERO_ADDRESS" ]]; then
+        warning_message+="$(tput setaf 3)WARNING: This transaction uses a custom gas token. Please verify that this is intended.$(tput sgr0)\n"
+    elif [[ "$refund_receiver" != "$ZERO_ADDRESS" ]]; then
+        warning_message+="$(tput setaf 3)WARNING: This transaction uses a custom refund receiver. Please verify that this is intended.$(tput sgr0)\n"
+    fi
+
+    if [[ -n "$warning_message" ]]; then
+        echo -e "$warning_message"
     fi
 }
 
@@ -816,6 +887,11 @@ EOF
     elif [[ ! "$signatures" =~ ^0x ]]; then
         signatures="0x${signatures}"
     fi
+    
+    # Warn the user if the transaction includes an untrusted delegate call.
+    warn_if_delegate_call "$operation" "$to"
+    # Check for a potential gas token attack.
+    check_gas_token_attack "$gas_price" "$gas_token" "$refund_receiver"
 
     # Calculate and display the hashes.
     echo "==================================="
