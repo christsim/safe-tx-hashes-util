@@ -1,0 +1,19 @@
+{
+  "name": "safe-tx-hashes",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build && mv dist/index.html dist/safe-tx-hashes.html && cd dist && shasum -a 256 safe-tx-hashes.html > safe-tx-hashes.html.sha256",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "ethers": "^6.16.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.3",
+    "vite": "^7.3.1",
+    "vite-plugin-singlefile": "^2.3.0"
+  }
+}

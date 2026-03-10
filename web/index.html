@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Safe TX Hashes</title>
+  </head>
+  <body>
+    <div id="app">
+      <header>
+        <h1>Safe TX Hashes</h1>
+        <p class="subtitle">|)0/\'T TR|\_|5T, \/3R1FY!</p>
+      </header>
+
+      <!-- Mode tabs -->
+      <nav class="tabs">
+        <button data-tab="online" class="active">Online</button>
+        <button data-tab="offline">Offline</button>
+        <button data-tab="message">Message</button>
+      </nav>
+
+      <!-- Online mode -->
+      <section id="tab-online" class="tab-content active">
+        <div class="tab-intro">
+          <p>Fetch transaction data from the Safe Transaction Service API and independently compute the EIP-712 hashes for verification.</p>
+        </div>
+        <form id="online-form">
+          <div class="form-group">
+            <label for="network">Network</label>
+            <select id="network"></select>
+          </div>
+          <div class="form-group">
+            <label for="address">Safe Address</label>
+            <input id="address" type="text" placeholder="0x..." autocomplete="off" spellcheck="false" />
+          </div>
+          <div class="form-group">
+            <label class="checkbox-label">
+              <input id="untrusted" type="checkbox" />
+              Include untrusted transactions
+            </label>
+          </div>
+          <button type="button" id="load-tx-btn">Load Transactions</button>
+
+          <!-- Transaction picker (hidden until transactions are loaded) -->
+          <div id="online-tx-picker" class="hidden">
+            <div class="form-group">
+              <label for="online-tx-select">Select Transaction</label>
+              <select id="online-tx-select"></select>
+            </div>
+          </div>
+
+          <div class="form-divider">
+            <span>or enter nonce manually</span>
+          </div>
+
+          <div class="form-group">
+            <label for="nonce">Nonce</label>
+            <input id="nonce" type="number" min="0" step="1" placeholder="0" />
+          </div>
+          <button type="submit" id="calculate-btn">Calculate Hashes</button>
+        </form>
+      </section>
+
+      <!-- Offline mode -->
+      <section id="tab-offline" class="tab-content">
+        <div class="tab-intro">
+          <p>Calculate transaction hashes offline without querying the Safe Transaction Service API.</p>
+        </div>
+
+        <!-- Sub-tabs for offline input method -->
+        <div class="sub-tabs">
+          <button data-offline-tab="send" class="active">Send</button>
+          <button data-offline-tab="json">Paste JSON</button>
+          <button data-offline-tab="manual">Manual Entry</button>
+        </div>
+
+        <!-- Send mode -->
+        <div id="offline-send" class="offline-tab-content active">
+          <div class="tab-intro">
+            <p>Construct a simple ETH or ERC-20 token transfer and compute the hashes. Enter amounts in human-readable units (e.g. 1.5 ETH, 100 USDC).</p>
+          </div>
+          <form id="offline-send-form">
+            <div class="form-group">
+              <label for="send-network">Network</label>
+              <select id="send-network"></select>
+            </div>
+            <div class="form-group">
+              <label for="send-address">Safe Address</label>
+              <input id="send-address" type="text" placeholder="0x..." autocomplete="off" spellcheck="false" />
+            </div>
+            <div class="form-group">
+              <label for="send-version">Safe Version</label>
+              <input id="send-version" type="text" value="1.3.0" placeholder="1.3.0" autocomplete="off" spellcheck="false" />
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label for="send-token">Token</label>
+                <select id="send-token"></select>
+              </div>
+              <div class="form-group">
+                <label for="send-nonce">Nonce</label>
+                <input id="send-nonce" type="number" min="0" step="1" placeholder="0" />
+              </div>
+            </div>
+            <div class="form-group">
+              <label for="send-recipient">Recipient</label>
+              <input id="send-recipient" type="text" placeholder="0x..." autocomplete="off" spellcheck="false" />
+            </div>
+            <div class="form-group">
+              <label for="send-amount" id="send-amount-label">Amount (ETH)</label>
+              <input id="send-amount" type="text" placeholder="0.0" autocomplete="off" spellcheck="false" />
+            </div>
+            <button type="submit" id="send-btn">Calculate Hashes</button>
+          </form>
+        </div>
+
+        <!-- JSON paste mode -->
+        <div id="offline-json" class="offline-tab-content">
+          <div class="tab-intro">
+            <p>Paste a transaction JSON response from the Safe Transaction Service API to compute hashes without making API calls.</p>
+          </div>
+          <form id="offline-json-form">
+            <div class="form-group">
+              <label for="offline-json-network">Network</label>
+              <select id="offline-json-network"></select>
+            </div>
+            <div class="form-group">
+              <label for="offline-json-address">Safe Address</label>
+              <input id="offline-json-address" type="text" placeholder="0x..." autocomplete="off" spellcheck="false" />
+            </div>
+            <div class="form-group">
+              <label for="offline-json-version">Safe Version</label>
+              <input id="offline-json-version" type="text" value="1.3.0" placeholder="1.3.0" autocomplete="off" spellcheck="false" />
+            </div>
+            <div class="form-group">
+              <label for="offline-json-data">Transaction JSON</label>
+              <textarea id="offline-json-data" rows="10" placeholder='Paste API response, single transaction object, or array of transactions...'></textarea>
+            </div>
+            <button type="submit" id="offline-json-btn">Calculate Hashes</button>
+          </form>
+        </div>
+
+        <!-- Manual entry mode -->
+        <div id="offline-manual" class="offline-tab-content">
+          <div class="tab-intro">
+            <p>Enter all transaction parameters manually to compute hashes. All fields match the Safe transaction struct.</p>
+          </div>
+          <form id="offline-manual-form">
+            <div class="form-group">
+              <label for="offline-network">Network</label>
+              <select id="offline-network"></select>
+            </div>
+            <div class="form-group">
+              <label for="offline-address">Safe Address</label>
+              <input id="offline-address" type="text" placeholder="0x..." autocomplete="off" spellcheck="false" />
+            </div>
+            <div class="form-group">
+              <label for="offline-version">Safe Version</label>
+              <input id="offline-version" type="text" value="1.3.0" placeholder="1.3.0" autocomplete="off" spellcheck="false" />
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label for="offline-to">To</label>
+                <input id="offline-to" type="text" placeholder="0x..." autocomplete="off" spellcheck="false" />
+              </div>
+              <div class="form-group">
+                <label for="offline-value">Value (wei)</label>
+                <input id="offline-value" type="text" value="0" placeholder="0" autocomplete="off" spellcheck="false" />
+              </div>
+            </div>
+            <div class="form-group">
+              <label for="offline-data">Data</label>
+              <input id="offline-data" type="text" value="0x" placeholder="0x" autocomplete="off" spellcheck="false" />
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label for="offline-operation">Operation</label>
+                <select id="offline-operation">
+                  <option value="0">0 - Call</option>
+                  <option value="1">1 - Delegatecall</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label for="offline-nonce">Nonce</label>
+                <input id="offline-nonce" type="number" min="0" step="1" placeholder="0" />
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label for="offline-safe-tx-gas">Safe Transaction Gas</label>
+                <input id="offline-safe-tx-gas" type="text" value="0" placeholder="0" autocomplete="off" spellcheck="false" />
+              </div>
+              <div class="form-group">
+                <label for="offline-base-gas">Base Gas</label>
+                <input id="offline-base-gas" type="text" value="0" placeholder="0" autocomplete="off" spellcheck="false" />
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label for="offline-gas-price">Gas Price</label>
+                <input id="offline-gas-price" type="text" value="0" placeholder="0" autocomplete="off" spellcheck="false" />
+              </div>
+              <div class="form-group">
+                <label for="offline-gas-token">Gas Token</label>
+                <input id="offline-gas-token" type="text" value="0x0000000000000000000000000000000000000000" placeholder="0x0000...0000" autocomplete="off" spellcheck="false" />
+              </div>
+            </div>
+            <div class="form-group">
+              <label for="offline-refund-receiver">Refund Receiver</label>
+              <input id="offline-refund-receiver" type="text" value="0x0000000000000000000000000000000000000000" placeholder="0x0000...0000" autocomplete="off" spellcheck="false" />
+            </div>
+            <button type="submit" id="offline-manual-btn">Calculate Hashes</button>
+          </form>
+        </div>
+      </section>
+
+      <!-- Message mode -->
+      <section id="tab-message" class="tab-content">
+        <div class="tab-intro">
+          <p>Calculate off-chain message hashes for Safe message signing. Enter the raw message text below.</p>
+        </div>
+        <form id="message-form">
+          <div class="form-group">
+            <label for="message-network">Network</label>
+            <select id="message-network"></select>
+          </div>
+          <div class="form-group">
+            <label for="message-address">Safe Address</label>
+            <input id="message-address" type="text" placeholder="0x..." autocomplete="off" spellcheck="false" />
+          </div>
+          <div class="form-group">
+            <label for="message-version">Safe Version</label>
+            <input id="message-version" type="text" value="1.3.0" placeholder="1.3.0" autocomplete="off" spellcheck="false" />
+          </div>
+          <div class="form-group">
+            <label for="message-text">Message</label>
+            <textarea id="message-text" rows="8" placeholder="Enter the raw message text to hash..."></textarea>
+          </div>
+          <button type="submit" id="message-btn">Calculate Hashes</button>
+        </form>
+      </section>
+
+      <!-- Loading -->
+      <div id="loading" class="hidden">Fetching transaction data...</div>
+
+      <!-- Error -->
+      <div id="error" class="hidden"></div>
+
+      <!-- Results -->
+      <div id="results" class="hidden">
+        <div id="network-config"></div>
+        <div id="tx-selector"></div>
+        <div id="warnings"></div>
+        <div id="tx-data"></div>
+        <div id="decoded-data"></div>
+        <div id="hashes"></div>
+      </div>
+    </div>
+
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
