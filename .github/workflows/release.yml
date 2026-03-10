@@ -26,9 +26,24 @@ jobs:
         working-directory: web
         run: npm run build
 
+      - name: Get version from tag
+        id: version
+        run: echo "VERSION=${GITHUB_REF_NAME}" >> "$GITHUB_OUTPUT"
+
+      - name: Create release zip
+        run: |
+          mkdir -p release
+          cp safe_hashes.sh release/
+          cp safe_eth_hashes.sh release/
+          cp safe_erc20_hashes.sh release/
+          cp web/dist/safe-tx-hashes.html release/
+          cp web/dist/safe-tx-hashes.html.sha256 release/
+          cd release && zip -r "../safe-tx-hashes-${{ steps.version.outputs.VERSION }}.zip" .
+
       - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
           files: |
+            safe-tx-hashes-${{ steps.version.outputs.VERSION }}.zip
             web/dist/safe-tx-hashes.html
             web/dist/safe-tx-hashes.html.sha256

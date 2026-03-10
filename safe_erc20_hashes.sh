@@ -15,7 +15,7 @@ usage() {
 }
 
 # Read-only associative array mapping networks to USDC contract addresses.
-#https://developers.circle.com/stablecoins/usdc-on-main-networks
+#https://www.circle.com/multi-chain-usdc
 declare -A -r usdc_ADDRESSES=(
     ["arbitrum"]="0xaf88d065e77c8cC2239327C5EDb3A432268e5831"
     ["avalanche"]="0xB97EF9Ef8734C71904D8002F8b6Bc66Dd9c48a6E"
