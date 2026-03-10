@@ -20,14 +20,6 @@ jobs:
         with:
           node-version: "20"
 
-      - name: Install dependencies
-        working-directory: web
-        run: npm ci
-
-      - name: Build
-        working-directory: web
-        run: npm run build
-
       - name: Generate version
         id: version
         run: |
@@ -36,6 +28,16 @@ jobs:
           VERSION="build-${COMMIT_COUNT}-${SHORT_SHA}"
           echo "VERSION=${VERSION}" >> "$GITHUB_OUTPUT"
           echo "Generated version: ${VERSION}"
+
+      - name: Install dependencies
+        working-directory: web
+        run: npm ci
+
+      - name: Build
+        working-directory: web
+        env:
+          VITE_APP_VERSION: ${{ steps.version.outputs.VERSION }}
+        run: npm run build
 
       - name: Create release zip
         run: |
@@ -56,3 +58,12 @@ jobs:
             safe-tx-hashes-${{ steps.version.outputs.VERSION }}.zip
             web/dist/safe-tx-hashes.html
             web/dist/safe-tx-hashes.html.sha256
+
+      - name: Prepare GitHub Pages
+        run: cp web/dist/safe-tx-hashes.html web/dist/index.html
+
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: web/dist

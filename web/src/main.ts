@@ -651,6 +651,10 @@ function handleSendSubmit(e: Event): void {
 // ---------------------------------------------------------------------------
 
 function init(): void {
+  // Display version
+  const version = import.meta.env.VITE_APP_VERSION || "dev";
+  document.getElementById("app-version")!.textContent = version;
+
   populateNetworkDropdown();
   initTabs();
 
