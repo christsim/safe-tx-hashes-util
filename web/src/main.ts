@@ -9,6 +9,7 @@
 
 import "./styles.css";
 
+import { getAddress } from "ethers";
 import { type Network, getNetwork, ZERO_ADDRESS } from "./constants";
 import { fetchSafeInfo, fetchTransactions, fetchPendingTransactions, fetchRecentTransactions, ApiError } from "./api";
 import { type SafeTransaction, parsePastedJson } from "./parser";
@@ -34,6 +35,8 @@ import {
   showLoadingButton,
   showError,
   hideError,
+  showAddressWarning,
+  hideAddressWarning,
   clearResults,
   showResults,
   renderNetworkConfig,
@@ -139,6 +142,7 @@ function renderTransactions(
  */
 async function handleLoadTransactions(): Promise<void> {
   hideError();
+  hideAddressWarning();
   clearResults();
   hideTransactionPicker();
   onlineState = null;
@@ -148,6 +152,20 @@ async function handleLoadTransactions(): Promise<void> {
 
   if (!address || !/^0x[a-fA-F0-9]{40}$/.test(address)) {
     showError("Invalid Ethereum address format. Must be 0x followed by 40 hex characters.");
+    return;
+  }
+
+  // Warn if address is not EIP-55 checksummed (non-blocking — API calls auto-correct it)
+  try {
+    const checksummed = getAddress(address);
+    if (address !== checksummed) {
+      showAddressWarning(
+        `Address is not in checksummed format (EIP-55). ` +
+        `Using checksummed form: ${checksummed}`
+      );
+    }
+  } catch {
+    showError("Invalid Ethereum address.");
     return;
   }
 
@@ -227,6 +245,7 @@ async function handleLoadTransactions(): Promise<void> {
 async function handleOnlineSubmit(e: Event): Promise<void> {
   e.preventDefault();
   hideError();
+  hideAddressWarning();
   clearResults();
 
   const address = (document.getElementById("address") as HTMLInputElement).value.trim();
@@ -235,6 +254,20 @@ async function handleOnlineSubmit(e: Event): Promise<void> {
 
   if (!address || !/^0x[a-fA-F0-9]{40}$/.test(address)) {
     showError("Invalid Ethereum address format. Must be 0x followed by 40 hex characters.");
+    return;
+  }
+
+  // Warn if address is not EIP-55 checksummed (non-blocking — API calls auto-correct it)
+  try {
+    const checksummed = getAddress(address);
+    if (address !== checksummed) {
+      showAddressWarning(
+        `Address is not in checksummed format (EIP-55). ` +
+        `Using checksummed form: ${checksummed}`
+      );
+    }
+  } catch {
+    showError("Invalid Ethereum address.");
     return;
   }
 
@@ -346,12 +379,26 @@ async function handleOnlineSubmit(e: Event): Promise<void> {
 function handleOfflineJsonSubmit(e: Event): void {
   e.preventDefault();
   hideError();
+  hideAddressWarning();
   clearResults();
 
   const formValues = getOfflineJsonFormValues();
   if (!formValues) return;
 
   const { address, version, jsonText } = formValues;
+
+  // Warn if address is not EIP-55 checksummed (non-blocking)
+  try {
+    const checksummed = getAddress(address);
+    if (address !== checksummed) {
+      showAddressWarning(
+        `Address is not in checksummed format (EIP-55). ` +
+        `Checksummed form: ${checksummed}`
+      );
+    }
+  } catch {
+    // Already validated by getOfflineJsonFormValues
+  }
 
   const network = getSelectedNetworkById("offline-json-network");
   if (!network) {
@@ -426,6 +473,7 @@ function handleOfflineJsonSubmit(e: Event): void {
 function handleOfflineManualSubmit(e: Event): void {
   e.preventDefault();
   hideError();
+  hideAddressWarning();
   clearResults();
 
   const formValues = getOfflineManualFormValues();
@@ -492,6 +540,7 @@ function handleOfflineManualSubmit(e: Event): void {
 function handleMessageSubmit(e: Event): void {
   e.preventDefault();
   hideError();
+  hideAddressWarning();
   clearResults();
 
   const formValues = getMessageFormValues();
@@ -540,6 +589,7 @@ function handleMessageSubmit(e: Event): void {
 function handleSendSubmit(e: Event): void {
   e.preventDefault();
   hideError();
+  hideAddressWarning();
   clearResults();
 
   const formValues = getSendFormValues();

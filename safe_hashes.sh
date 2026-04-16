@@ -736,6 +736,19 @@ calculate_safe_hashes() {
     # Validate if the required parameters have the correct format.
     validate_network "$network"
     validate_address "$address"
+
+    # Convert to EIP-55 checksummed address (required by the Safe API).
+    local checksummed_address
+    checksummed_address=$(cast to-checksum-address "$address" 2>/dev/null)
+    if [[ $? -ne 0 || -z "$checksummed_address" ]]; then
+        echo -e "${BOLD}${RED}Failed to checksum address: \"${address}\"${RESET}" >&2
+        exit 1
+    fi
+    if [[ "$address" != "$checksummed_address" ]]; then
+        echo -e "${YELLOW}Note: Address converted to checksummed format: ${checksummed_address}${RESET}" >&2
+    fi
+    address="$checksummed_address"
+
     local chain_id=$(get_chain_id "$network")
     local api_url=""
 

@@ -6,6 +6,7 @@
 // CORS is supported (Access-Control-Allow-Origin: *).
 // ============================================================================
 
+import { getAddress } from "ethers";
 import { type Network } from "./constants";
 import {
   type SafeInfo,
@@ -89,7 +90,7 @@ export async function fetchSafeInfo(
   network: Network,
   address: string
 ): Promise<SafeInfo> {
-  const url = `${network.apiUrl}/api/v1/safes/${address}/`;
+  const url = `${network.apiUrl}/api/v1/safes/${getAddress(address)}/`;
   const json = await apiFetch(url);
   return parseSafeInfo(json);
 }
@@ -108,7 +109,7 @@ export async function fetchTransactions(
   nonce: number,
   untrusted: boolean = false
 ): Promise<TransactionResponse> {
-  let url = `${network.apiUrl}/api/v1/safes/${address}/multisig-transactions/?nonce=${nonce}`;
+  let url = `${network.apiUrl}/api/v1/safes/${getAddress(address)}/multisig-transactions/?nonce=${nonce}`;
 
   if (untrusted) {
     url += "&trusted=false";
@@ -128,7 +129,7 @@ export async function fetchPendingTransactions(
   address: string,
   untrusted: boolean = false
 ): Promise<TransactionResponse> {
-  let url = `${network.apiUrl}/api/v1/safes/${address}/multisig-transactions/?executed=false&ordering=nonce&limit=100`;
+  let url = `${network.apiUrl}/api/v1/safes/${getAddress(address)}/multisig-transactions/?executed=false&ordering=nonce&limit=100`;
 
   if (untrusted) {
     url += "&trusted=false";
@@ -148,7 +149,7 @@ export async function fetchRecentTransactions(
   address: string,
   limit: number = 5
 ): Promise<TransactionResponse> {
-  const url = `${network.apiUrl}/api/v1/safes/${address}/multisig-transactions/?executed=true&ordering=-nonce&limit=${limit}`;
+  const url = `${network.apiUrl}/api/v1/safes/${getAddress(address)}/multisig-transactions/?executed=true&ordering=-nonce&limit=${limit}`;
   const json = await apiFetch(url);
   return parseTransactionResponse(json);
 }

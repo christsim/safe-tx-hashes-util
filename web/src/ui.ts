@@ -6,7 +6,7 @@
 // warnings, and form management. Matches the output format of safe_hashes.sh.
 // ============================================================================
 
-import { formatUnits } from "ethers";
+import { formatUnits, getAddress } from "ethers";
 import { type Network, type Token, NETWORKS, TOKENS, DEFAULT_SAFE_VERSION, ZERO_ADDRESS, getTokensForNetwork, findTokenByAddress } from "./constants";
 import { type SafeTransaction, type DecodedData } from "./parser";
 import { type Warning } from "./warnings";
@@ -242,6 +242,16 @@ export function showError(message: string): void {
 
 export function hideError(): void {
   $("error").classList.add("hidden");
+}
+
+export function showAddressWarning(message: string): void {
+  const el = $("address-warning");
+  el.textContent = message;
+  el.classList.remove("hidden");
+}
+
+export function hideAddressWarning(): void {
+  $("address-warning").classList.add("hidden");
 }
 
 export function clearResults(): void {
